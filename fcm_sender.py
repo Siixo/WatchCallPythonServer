@@ -77,13 +77,25 @@ def get_access_token():
         path = get_service_account_path()
         print(f"[FCM] Loading service account from: {path}")
         
+        # Try to read the file to validate it
+        try:
+            with open(path, 'r') as f:
+                sa_data = json.load(f)
+                print(f"[FCM] Service account loaded, type: {sa_data.get('type')}")
+                print(f"[FCM] Project ID from file: {sa_data.get('project_id')}")
+        except Exception as e:
+            print(f"[FCM] WARNING: Could not read service account file: {e}")
+        
         creds = service_account.Credentials.from_service_account_file(
             path, scopes=SCOPES)
         request = google.auth.transport.requests.Request()
         creds.refresh(request)
         
         print(f"[FCM] Got access token for project: {creds.project_id}")
+        print(f"[FCM] Token expires at: {creds.expiry}")
         return creds.token
     except Exception as e:
         print(f"[FCM] ERROR getting access token: {e}")
+        import traceback
+        traceback.print_exc()
         raise

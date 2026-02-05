@@ -15,7 +15,7 @@ def main():
     http_thread.start()
     
     # Run user input listener on main thread (blocks here)
-    listen_for_user_input()
+    #listen_for_user_input()
 
 
 if __name__ == "__main__":

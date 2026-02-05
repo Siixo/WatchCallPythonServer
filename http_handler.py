@@ -42,6 +42,8 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
 
                 data = json.loads(body.decode('utf-8'))
                 pi_id = data.get('pi_id')
+                message = data.get('message', 'Alert from Pi')
+                alert_type = data.get('alert_type', 'alert')
 
                 if not pi_id:
                     self.send_response(400)
@@ -54,7 +56,11 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 print(f"Found {len(tokens)} tokens for pi_id={pi_id}")
 
                 for token in tokens:
-                    data_payload = {'alert': 'ALARM'}
+                    data_payload = {
+                        'pi_id': str(pi_id),
+                        'message': str(message),
+                        'alert_type': str(alert_type)
+                    }
                     try:
                         response = send_fcm_message(token, data_payload)
                         print(f'Notification envoyée au token {token[:20]}...: {response}')

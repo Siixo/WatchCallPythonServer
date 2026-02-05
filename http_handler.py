@@ -53,10 +53,15 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                     return
                 
                 tokens = get_devices_for_pi(pi_id)
+                print(f"\n=== ALERT PROCESSING ===")
+                print(f"Pi ID: {pi_id}")
                 print(f"Found {len(tokens)} tokens for pi_id={pi_id}")
+                if tokens:
+                    print(f"Tokens: {[t[:30] + '...' for t in tokens]}")
 
                 sent_count = 0
                 failed_count = 0
+                errors = []
                 
                 for token in tokens:
                     data_payload = {
@@ -65,23 +70,28 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                         'alert_type': str(alert_type)
                     }
                     try:
-                        print(f"Sending FCM to token: {token[:20]}...")
+                        print(f"\n[{sent_count + failed_count + 1}] Sending FCM to token: {token[:30]}...")
                         response = send_fcm_message(token, data_payload)
-                        print(f'✓ Notification envoyée au token {token[:20]}...: {response}')
+                        print(f'✓ FCM sent successfully')
                         sent_count += 1
                     except Exception as e:
-                        print(f'✗ Erreur lors de l\'envoi de la notification au token {token[:20]}...: {e}')
+                        error_msg = str(e)
+                        print(f'✗ FCM send failed: {error_msg}')
                         failed_count += 1
+                        errors.append(error_msg)
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 response = {
-                    'status': 'Alertes traitées',
-                    'tokens_count': len(tokens),
+                    'status': 'Alert processing complete',
+                    'pi_id': str(pi_id),
+                    'tokens_found': len(tokens),
                     'sent_count': sent_count,
-                    'failed_count': failed_count
+                    'failed_count': failed_count,
+                    'errors': errors[:3]  # Return first 3 errors
                 }
+                print(f"Response: {response}\n")
                 self.wfile.write(json.dumps(response).encode('utf-8'))
             else:
                 self.send_response(404)

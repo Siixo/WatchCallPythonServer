@@ -2,23 +2,42 @@ import json
 import time
 from config import DEVICES_DB_PATH
 
+# In-memory storage for devices (persists during dyno runtime on Render)
+_devices_cache = None
+
 def load_devices():
-    """Load devices from JSON file."""
+    """Load devices from JSON file or in-memory cache."""
+    global _devices_cache
+    
+    # Return in-memory cache if it exists
+    if _devices_cache is not None:
+        return _devices_cache
+    
+    # Try to load from file
     try:
         with open(DEVICES_DB_PATH, 'r') as f:
-            return json.load(f)
+            _devices_cache = json.load(f)
+            return _devices_cache
     except (FileNotFoundError, json.JSONDecodeError):
-        return {"devices": []}
+        # Initialize empty devices dict and cache it
+        _devices_cache = {"devices": []}
+        return _devices_cache
 
 
 def save_devices(devices):
-    """Sauvegarde les appareils dans un fichier JSON."""
+    """Sauvegarde les appareils dans un fichier JSON et met à jour le cache."""
+    global _devices_cache
+    
+    # Update in-memory cache
+    _devices_cache = devices
+    
+    # Try to persist to file
     try:
         with open(DEVICES_DB_PATH, 'w') as f:
             json.dump(devices, f, indent=2)
         print(f"✓ Devices saved to {DEVICES_DB_PATH}: {len(devices.get('devices', []))} devices")
     except Exception as e:
-        print(f"✗ ERROR saving devices: {e}")
+        print(f"✗ WARNING saving to file (using in-memory cache): {e}")
 
 
 def register_device(fcm_token, pi_id):

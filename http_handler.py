@@ -55,6 +55,9 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 tokens = get_devices_for_pi(pi_id)
                 print(f"Found {len(tokens)} tokens for pi_id={pi_id}")
 
+                sent_count = 0
+                failed_count = 0
+                
                 for token in tokens:
                     data_payload = {
                         'pi_id': str(pi_id),
@@ -62,15 +65,23 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                         'alert_type': str(alert_type)
                     }
                     try:
+                        print(f"Sending FCM to token: {token[:20]}...")
                         response = send_fcm_message(token, data_payload)
-                        print(f'Notification envoyée au token {token[:20]}...: {response}')
+                        print(f'✓ Notification envoyée au token {token[:20]}...: {response}')
+                        sent_count += 1
                     except Exception as e:
-                        print(f'Erreur lors de l\'envoi de la notification au token {token[:20]}...: {e}')
+                        print(f'✗ Erreur lors de l\'envoi de la notification au token {token[:20]}...: {e}')
+                        failed_count += 1
 
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
-                response = {'status': 'Alertes envoyées avec succès', 'tokens_count': len(tokens)}
+                response = {
+                    'status': 'Alertes traitées',
+                    'tokens_count': len(tokens),
+                    'sent_count': sent_count,
+                    'failed_count': failed_count
+                }
                 self.wfile.write(json.dumps(response).encode('utf-8'))
             else:
                 self.send_response(404)
